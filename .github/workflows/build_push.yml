@@ -4,11 +4,7 @@ permissions:
   contents: write
 
 on:
-  push:
-    branches:
-      - '*'
-    tags:
-      - v*
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
