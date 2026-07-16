@@ -1,0 +1,19 @@
+# Build files
+.gradle
+.kotlin
+build
+
+# IDE files
+*.iml
+.idea/*
+!.idea/icon.png
+/captures
+
+# Configuration files
+local.properties
+
+# Release signing keystore
+signingkey.jks
+
+# macOS specific files
+.DS_Store
