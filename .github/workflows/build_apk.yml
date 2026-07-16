@@ -39,6 +39,33 @@ jobs:
           cp app/build/outputs/apk/release/*.apk apk-out/ || true
           ls -lh apk-out/
 
+      - name: Smoke test on Android 7 (API 24) emulator
+        uses: ReactiveCircus/android-emulator-runner@4c44018e59b437e86cdfc41da381398f93ed8808 # v2
+        with:
+          api-level: 24
+          target: default
+          arch: x86
+          profile: ''
+          force-avd-creation: false
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            APK=app/build/outputs/apk/release/app-x86-release.apk
+            test -f "$APK" || { echo "::error::x86 APK not found"; exit 1; }
+            adb install -r "$APK"
+            adb shell am start -n xyz.jmir.tachiyomi.mi/eu.kanade.tachiyomi.ui.main.MainActivity
+            sleep 25
+            adb logcat -d -b crash | grep -iE "FATAL EXCEPTION|AndroidRuntime.*Crash|died" && {
+              echo "::error::App crashed on launch"; exit 1;
+            }
+            adb shell pidof xyz.jmir.tachiyomi.mi > /tmp/pid || true
+            if [ -s /tmp/pid ]; then
+              echo "App process alive (pid $(cat /tmp/pid))"
+            else
+              echo "::error::App process not found after launch"
+              exit 1
+            fi
+
       - name: Get version name
         id: version
         run: |
