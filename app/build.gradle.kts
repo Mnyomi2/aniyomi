@@ -19,7 +19,7 @@ android {
     defaultConfig {
         applicationId = "xyz.jmir.tachiyomi.mi"
 
-        minSdk = 26
+        minSdk = 24
 
         versionCode = 131
         versionName = "0.18.1.2"
