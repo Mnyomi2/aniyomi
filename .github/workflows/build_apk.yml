@@ -50,7 +50,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            APK="$GITHUB_WORKSPACE/app/build/outputs/apk/release/app-x86-release.apk"
+            APK="${{ github.workspace }}/app/build/outputs/apk/release/app-x86-release.apk"
             test -f "$APK" || { echo "::error::x86 APK not found at $APK"; exit 1; }
             adb install -r "$APK"
             adb shell am start -n xyz.jmir.tachiyomi.mi/eu.kanade.tachiyomi.ui.main.MainActivity
