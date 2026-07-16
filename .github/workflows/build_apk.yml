@@ -43,7 +43,7 @@ jobs:
           ls -lh apk-out/
 
       - name: Upload APKs to BUILD APK branch
-        uses: peaceiris/actions-gh-pages@4f6fc9e7e4e7f5f6f0d6b0e8f5e9b5d8f0c1a2b3 # v4.0.0
+        uses: peaceiris/actions-gh-pages@v4.0.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./apk-out
