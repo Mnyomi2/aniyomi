@@ -39,17 +39,42 @@ jobs:
       - name: Prepare APK artifacts
         run: |
           mkdir -p apk-out
-          cp app/build/outputs/apk/release/app-armeabi-v7a-release.apk apk-out/ || true
-          cp app/build/outputs/apk/release/app-arm64-v8a-release.apk apk-out/ || true
-          cp app/build/outputs/apk/release/app-x86-release.apk apk-out/ || true
-          cp app/build/outputs/apk/release/app-x86_64-release.apk apk-out/ || true
+          cp app/build/outputs/apk/release/*.apk apk-out/ || true
           ls -lh apk-out/
 
-      - name: Upload APKs to BUILD APK branch
-        uses: peaceiris/actions-gh-pages@v4.0.0
+      - name: Get version name
+        id: version
+        run: |
+          VER=$(grep -oE 'versionName = "[^"]+"' app/build.gradle.kts | head -1 | sed -E 's/versionName = "([^"]+)"/\1/')
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          echo "tag=build-$(date +%Y%m%d-%H%M%S)" >> "$GITHUB_OUTPUT"
+
+      - name: Delete existing build releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release list --repo "$GITHUB_REPOSITORY" --limit 50 | awk '$1 ~ /^build-/' | while read -r tag rest; do
+            gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --yes || true
+          done
+
+      - name: Create GitHub Release with APKs
+        uses: softprops/action-gh-release@v2.2.1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./apk-out
-          publish_branch: BUILD-APK
-          commit_message: "Build signed release APK ${{ github.sha }}"
-          force_orphan: true
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Aniyomi ${{ steps.version.outputs.version }} (${{ steps.version.outputs.tag }})
+          body: |
+            Signed release APK build from commit `${{ github.sha }}`.
+
+            | Variant | Notes |
+            | ------- | ----- |
+            | Universal | All ABIs (large) |
+            | arm64-v8a | 64-bit ARM (recommended) |
+            | armeabi-v7a | 32-bit ARM |
+            | x86 | 32-bit x86 |
+            | x86_64 | 64-bit x86 |
+          files: |
+            apk-out/*.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
