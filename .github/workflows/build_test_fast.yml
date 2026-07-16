@@ -37,11 +37,17 @@ jobs:
         run: |
           cat > "${{ github.workspace }}/emulator_test.sh" <<'EOF'
           set -euo pipefail
-          APK="${{ github.workspace }}/app/build/outputs/apk/release/app-armeabi-v7a-release.apk"
-          if [ ! -f "$APK" ]; then
-            echo "::error::armeabi-v7a APK not found at $APK"
+          RELEASE_DIR="${{ github.workspace }}/app/build/outputs/apk/release"
+          APK=""
+          for cand in "$RELEASE_DIR/app-armeabi-v7a-release.apk" "$RELEASE_DIR/app-universal-release.apk"; do
+            if [ -f "$cand" ]; then APK="$cand"; break; fi
+          done
+          if [ -z "$APK" ]; then
+            echo "::error::No armeabi-v7a/universal APK found in $RELEASE_DIR"
+            ls -lh "$RELEASE_DIR" || true
             exit 1
           fi
+          echo "Using APK: $APK"
           adb install -r "$APK"
           adb shell am start -n xyz.jmir.tachiyomi.mi/eu.kanade.tachiyomi.ui.main.MainActivity
           sleep 25
