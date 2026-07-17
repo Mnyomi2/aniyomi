@@ -50,7 +50,6 @@ jobs:
         run: |
           cat > "${{ github.workspace }}/emulator_test.sh" <<'EOF'
           set -euo pipefail
-          PKG="xyz.jmir.tachiyomi.mi"
           APK_DIR="${{ github.workspace }}/apk-out"
           # Auto-detect any produced APK. The emulator here is 32-bit x86 (API 24),
           # so prefer the x86 APK over x86_64 to avoid INSTALL_FAILED_NO_MATCHING_ABIS.
@@ -83,8 +82,22 @@ jobs:
           fi
           echo "Install OK"
 
-          echo "Launching MainActivity..."
-          adb shell am start -n "$PKG/eu.kanade.tachiyomi.ui.main.MainActivity" \
+          # Detect the real installed package (debug builds append .dev via applicationIdSuffix).
+          PKG="$(adb shell pm list packages | grep -iE 'xyz.jmir.tachiyomi.mi' | head -n1 | sed -E 's/^package://; s/\r$//')"
+          if [ -z "$PKG" ]; then
+            echo "::error::Could not determine installed package name"
+            adb shell pm list packages | grep -i tachiyomi || true
+            exit 1
+          fi
+          echo "Detected package: $PKG"
+
+          # Resolve the launcher activity dynamically.
+          LAUNCHER="$(adb shell cmd package resolve-activity --brief "$PKG" | tail -n1 | sed -E 's/\r$//')"
+          if [ -z "$LAUNCHER" ] || [ "$LAUNCHER" = "No activity found" ]; then
+            LAUNCHER="$PKG/eu.kanade.tachiyomi.ui.main.MainActivity"
+          fi
+          echo "Launching: $LAUNCHER"
+          adb shell am start -n "$LAUNCHER" \
             || { echo "::error::am start failed"; exit 1; }
 
           sleep 20
