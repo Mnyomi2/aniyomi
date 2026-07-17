@@ -32,8 +32,8 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Build x86 debug APK
-        run: ./gradlew assembleDebug -Penable-updater -Pandroid.injected.build.abi=x86
+      - name: Build debug APK
+        run: ./gradlew assembleDebug -Penable-updater
 
       - name: Prepare APK artifact
         run: |
