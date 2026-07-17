@@ -35,19 +35,34 @@ jobs:
       - name: Build only armeabi-v7a release APK
         run: ./gradlew assembleRelease -Penable-updater -Pandroid.injected.build.abi=armeabi-v7a
 
+      - name: Prepare APK artifact
+        run: |
+          mkdir -p apk-out
+          cp app/build/outputs/apk/release/*.apk apk-out/ || true
+          echo "=== APKs produced ==="
+          ls -lh apk-out/ || { echo "::error::No APK produced in app/build/outputs/apk/release"; exit 1; }
+
+      - name: Upload APK artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apks
+          path: apk-out/*.apk
+          if-no-files-found: warn
+
       - name: Write emulator smoke-test script
         run: |
           cat > "${{ github.workspace }}/emulator_test.sh" <<'EOF'
           set -euo pipefail
           PKG="xyz.jmir.tachiyomi.mi"
-          RELEASE_DIR="${{ github.workspace }}/app/build/outputs/apk/release"
+          APK_DIR="${{ github.workspace }}/apk-out"
           APK=""
-          for cand in "$RELEASE_DIR/app-armeabi-v7a-release.apk" "$RELEASE_DIR/app-universal-release.apk"; do
+          for cand in "$APK_DIR/app-armeabi-v7a-release.apk" "$APK_DIR/app-universal-release.apk" "$APK_DIR"/*.apk; do
             if [ -f "$cand" ]; then APK="$cand"; break; fi
           done
           if [ -z "$APK" ]; then
-            echo "::error::No armeabi-v7a/universal APK found in $RELEASE_DIR"
-            ls -lh "$RELEASE_DIR" || true
+            echo "::error::No armeabi-v7a/universal APK found in $APK_DIR"
+            ls -lh "$APK_DIR" || true
             exit 1
           fi
           echo "Using APK: $APK"
