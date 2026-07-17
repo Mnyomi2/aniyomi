@@ -52,13 +52,15 @@ jobs:
           set -euo pipefail
           PKG="xyz.jmir.tachiyomi.mi"
           APK_DIR="${{ github.workspace }}/apk-out"
-          # Auto-detect any produced APK, preferring x86 builds for the emulator.
+          # Auto-detect any produced APK. The emulator here is 32-bit x86 (API 24),
+          # so prefer the x86 APK over x86_64 to avoid INSTALL_FAILED_NO_MATCHING_ABIS.
           APK=""
           shopt -s nullglob
           candidates=(
-            "$APK_DIR"/app-x86_64*.apk
+            "$APK_DIR"/app-x86-debug.apk
             "$APK_DIR"/app-x86*.apk
             "$APK_DIR"/app-universal*.apk
+            "$APK_DIR"/app-x86_64*.apk
             "$APK_DIR"/*.apk
           )
           for cand in "${candidates[@]}"; do
